@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+~$*.docx
+# map tile cache (re-downloaded on first use)
+data/map_tiles.sqlite
