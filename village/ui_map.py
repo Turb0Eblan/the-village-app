@@ -102,6 +102,10 @@ def symbol(kind, status=""):
         d.polygon([(2, 9), (8, 3), (14, 9)], fill="white", outline=col)
         d.rectangle([4, 9, 12, 15], fill="white", outline=col)
         return im.crop((0, 0, 17, 17))
+    elif kind == "house_s":       # small filled house for real buildings
+        d.polygon([(1, 6), (6, 1), (11, 6)], fill=ORANGE, outline=INK)
+        d.rectangle([2, 6, 10, 11], fill=ORANGE, outline=INK)
+        return im.crop((0, 0, 12, 12))
     elif kind == "dot":
         d.ellipse([5, 5, 14, 14], fill=INK, outline="white", width=2)
     else:  # load
@@ -545,13 +549,20 @@ class GeoMap:
                          if e["name"].startswith(("LV feeder", "CB F1", "House"))])
         cmd = (lambda *_a: self.page.select("item", "village", info))
         self._path(pts, RED if st else ORANGE, 4, cmd=cmd)
-        x0 = p["lvf.start"]
-        N = fd["N"]
-        hi = self._img(symbol("house"))
-        for i in range(N):
-            f = x0 + (1 - x0) * i / max(1, N - 1)
-            la, lo = point_at(pts, f)
-            self.map.set_marker(la, lo, icon=hi, command=cmd)
+        houses = p.table("lvf_houses")
+        hi = self._img(symbol("house_s"))
+        if houses:   # real buildings, each with its service cable to the street
+            for h in houses:
+                self._path([(h["tap_lat"], h["tap_lon"]), (h["lat"], h["lon"])], RED if st else ORANGE, 1, cmd=cmd)
+            for h in houses:
+                self.map.set_marker(h["lat"], h["lon"], icon=hi, command=cmd)
+        else:
+            x0 = p["lvf.start"]
+            N = fd["N"]
+            for i in range(N):
+                f = x0 + (1 - x0) * i / max(1, N - 1)
+                la, lo = point_at(pts, f)
+                self.map.set_marker(la, lo, icon=hi, command=cmd)
         end = pts[-1]
         self.map.set_marker(end[0], end[1], icon=self._img(label_icon("house", [info["lines"][0] + "  " + info["lines"][1]], st)),
                             icon_anchor="w", command=cmd)

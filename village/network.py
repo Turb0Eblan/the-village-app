@@ -735,7 +735,8 @@ def lv_feeder(p, log, Ulv, R_up, X_up, Isc_bus, dU_up):
     from .geo import route_km
     T = "feeder"
     U = Ulv * 1e3
-    N = int(p["lvf.n_house"])
+    houses = p.table("lvf_houses")
+    N = len(houses) or int(p["lvf.n_house"])
     L = p["lvf.len_m"] or route_km(p, "LVF") * 1000 * p["geo.route_factor"]
     a, b = p["lvf.ks_a"], p["lvf.ks_b"]
     ks = min(1.0, a + b / math.sqrt(N))
@@ -743,14 +744,22 @@ def lv_feeder(p, log, Ulv, R_up, X_up, Isc_bus, dU_up):
     I = S * 1e3 / (SQ3 * U)
     Ides = I * p["geo.line_margin"]
     x0 = p["lvf.start"]
-    Leq = L * (x0 + 1) / 2            # houses evenly spread from x0*L to L
+    if houses:                         # real houses: distance of each tap along the street
+        Leq = sum(h["s_m"] for h in houses) / N * p["geo.route_factor"]
+    else:                              # houses evenly spread from x0*L to L
+        Leq = L * (x0 + 1) / 2
     log.head(T, f"LV feeder F1 - one road of the village ({N} houses, {L:.0f} m)")
     log.add(T, "Feeder length", "L = sum haversine(route points)" if not p["lvf.len_m"] else "parameter", L, "m")
     log.add(T, "Diversity factor", f"k_s = a + b / sqrt(N) = {a} + {b} / sqrt({N})", ks, "")
     log.add(T, "Feeder power", "S = N x S_house x k_s", S, "kVA")
     log.add(T, "Feeder current", "I = S / (sqrt3 x U)", I, "A", note=f"with margin {p['geo.line_margin']}: {Ides:.1f} A")
-    log.add(T, "Distance to the load centre", "L_eq = L (x_0 + 1) / 2", Leq, "m",
-            note=f"first house at {x0:.0%} of the length, last at the end")
+    if houses:
+        log.add(T, "Distance to the load centre", "L_eq = sum s_i / N", Leq, "m",
+                note=f"s_i = distance along the street to house i ({N} OpenStreetMap buildings, "
+                     f"first at {min(h['s_m'] for h in houses):.0f} m, last at {max(h['s_m'] for h in houses):.0f} m)")
+    else:
+        log.add(T, "Distance to the load centre", "L_eq = L (x_0 + 1) / 2", Leq, "m",
+                note=f"first house at {x0:.0%} of the length, last at the end")
     rows = [r for r in p.table("lv_cables") if p["lvf.type"] in ("auto", r["type"])] or p.table("lv_cables")
     rho, xk = p["lvf.rho"], p["lvf.x_km"]
     U0 = U / SQ3

@@ -49,3 +49,8 @@ Data: `data/` (8760 h load curves in kW and weather).
      - L = 1/(C ω_h²), and R comes from the quality factor q.
   - THD = sqrt(Σ I_h²) / I_1.
   - Tables: "Harmonic compliance steps", "Harmonic filter design", "Filter sizing iterations".
+
+## LV feeder on real streets
+The LV feeder F1 follows the real streets (La Côte, Le Cornet), and its 24 houses are the real buildings closest to the road. Both come from OpenStreetMap (© OpenStreetMap contributors, ODbL) and are stored in Parameters → routes / lvf_houses.
+
+The voltage drop uses the real distance of each house along the street. When the best system uses the largest size in a search list, the optimiser now tests 1.5× and 2× that size itself, and only warns if a larger size really is cheaper.

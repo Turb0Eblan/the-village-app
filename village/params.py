@@ -54,7 +54,7 @@ SECTIONS = [
         P("kva", "Contract per house", 9.0, "kVA", SUBJ + " (cluster 2)"),
         P("ks_a", "Diversity ks = a + b / sqrt(N): a", 0.2, "-", ASSUMED),
         P("ks_b", "Diversity ks = a + b / sqrt(N): b", 0.8, "-", ASSUMED),
-        P("start", "First house at (fraction of feeder length)", 0.35, "-"),
+        P("start", "First house at (fraction of length), only without the house table", 0.35, "-"),
         P("type", "Cable type (OHL / UG / auto)", "UG", "", "village centre: underground"),
         P("len_m", "Feeder length (0 = from map route)", 0.0, "m"),
         P("dU_max", "Max voltage drop on the LV feeder", 6.0, "%", "with T1 drop stays inside EN 50160 +/-10 %"),
@@ -330,7 +330,8 @@ TABLES = {
     },
     "routes": {
         "title": "Line routes on the map (points in order)",
-        "source": "L1 follows the D218 polyline of the team map; L0, L2 and the LV feeder " + ASSUMED,
+        "ver": 2,
+        "source": "L1 follows the D218 polyline of the team map; the LV feeder follows the streets of OpenStreetMap; L0 and L2 " + ASSUMED,
         "columns": ["line", "lat", "lon"],
         "rows": [
             ["L0", 45.1300, 5.5860], ["L0", 45.1450, 5.5700], ["L0", 45.1600, 5.5560],
@@ -340,8 +341,50 @@ TABLES = {
             ["L1", 45.2195879, 5.5810475],
             ["L2", 45.1762622, 5.5428289], ["L2", 45.1748534, 5.5428277], ["L2", 45.1735, 5.5480],
             ["L2", 45.1722, 5.5530], ["L2", 45.1717663, 5.5564406],
-            ["LVF", 45.1762622, 5.5428289], ["LVF", 45.1757, 5.5440], ["LVF", 45.1751, 5.5452],
-            ["LVF", 45.1746, 5.5462], ["LVF", 45.1742358, 5.5470240], ["LVF", 45.1736, 5.5482],
+            ["LVF", 45.1762622, 5.5428289], ["LVF", 45.1761243, 5.5427779], ["LVF", 45.1760583, 5.5428673], ["LVF", 45.1758584, 5.5431609],
+            ["LVF", 45.1756289, 5.5435319], ["LVF", 45.1759739, 5.5442402], ["LVF", 45.1761317, 5.5444942],
+            ["LVF", 45.1761538, 5.5445362], ["LVF", 45.1761892, 5.5446038], ["LVF", 45.1762131, 5.5446661],
+            ["LVF", 45.1761831, 5.5447099], ["LVF", 45.1760573, 5.5449714], ["LVF", 45.1760348, 5.5450247],
+            ["LVF", 45.1759857, 5.5451405], ["LVF", 45.1759463, 5.5452336], ["LVF", 45.1757989, 5.5455816],
+            ["LVF", 45.1757145, 5.5457808], ["LVF", 45.1755434, 5.5461191], ["LVF", 45.1754378, 5.5463280],
+            ["LVF", 45.1753600, 5.5464817], ["LVF", 45.1753258, 5.5465802], ["LVF", 45.1753036, 5.5466509],
+            ["LVF", 45.1752463, 5.5468084], ["LVF", 45.1752164, 5.5469350], ["LVF", 45.1751856, 5.5471198],
+            ["LVF", 45.1751756, 5.5473381], ["LVF", 45.1750978, 5.5473714], ["LVF", 45.1749678, 5.5474445],
+            ["LVF", 45.1748205, 5.5475326], ["LVF", 45.1747477, 5.5475820], ["LVF", 45.1746871, 5.5476489],
+            ["LVF", 45.1746505, 5.5477000], ["LVF", 45.1746245, 5.5477363], ["LVF", 45.1745885, 5.5478093],
+            ["LVF", 45.1745633, 5.5478868], ["LVF", 45.1745151, 5.5480740], ["LVF", 45.1745036, 5.5482148],
+            ["LVF", 45.1745557, 5.5482629], ["LVF", 45.1746369, 5.5483349], ["LVF", 45.1746927, 5.5484177],
+        ],
+    },
+    "lvf_houses": {
+        "title": "Houses on LV feeder F1 (cluster 2 road)",
+        "source": "building footprints and streets from OpenStreetMap (c) OpenStreetMap contributors, ODbL; the 24 buildings closest to the road",
+        "columns": ["n", "lat", "lon", "tap_lat", "tap_lon", "s_m"],
+        "rows": [
+            [1, 45.1757990, 5.5429750, 45.1758952, 5.5431068, 36],
+            [2, 45.1757494, 5.5430709, 45.1758424, 5.5431868, 45],
+            [3, 45.1756502, 5.5431413, 45.1757747, 5.5432963, 56],
+            [4, 45.1759385, 5.5438363, 45.1758293, 5.5439433, 120],
+            [5, 45.1761834, 5.5440415, 45.1759960, 5.5442758, 152],
+            [6, 45.1761064, 5.5441964, 45.1760165, 5.5443088, 155],
+            [7, 45.1761318, 5.5442501, 45.1760464, 5.5443569, 161],
+            [8, 45.1762274, 5.5443219, 45.1761133, 5.5444646, 172],
+            [9, 45.1764512, 5.5447311, 45.1762131, 5.5446661, 191],
+            [10, 45.1764392, 5.5448944, 45.1762131, 5.5446661, 191],
+            [11, 45.1759706, 5.5446777, 45.1761261, 5.5448283, 207],
+            [12, 45.1757788, 5.5451732, 45.1759207, 5.5452941, 250],
+            [13, 45.1756949, 5.5454354, 45.1758168, 5.5455393, 273],
+            [14, 45.1756806, 5.5454982, 45.1757935, 5.5455944, 278],
+            [15, 45.1754378, 5.5458830, 45.1755863, 5.5460342, 319],
+            [16, 45.1750892, 5.5464092, 45.1753274, 5.5465756, 371],
+            [17, 45.1754811, 5.5468472, 45.1752845, 5.5467033, 382],
+            [18, 45.1749266, 5.5478284, 45.1748359, 5.5475234, 474],
+            [19, 45.1747728, 5.5474619, 45.1748011, 5.5475458, 478],
+            [20, 45.1747019, 5.5480561, 45.1745411, 5.5479728, 524],
+            [21, 45.1743006, 5.5483903, 45.1745036, 5.5482148, 543],
+            [22, 45.1745642, 5.5485883, 45.1746914, 5.5484158, 570],
+            [23, 45.1747717, 5.5485037, 45.1746927, 5.5484177, 570],
+            [24, 45.1745650, 5.5487448, 45.1746927, 5.5484177, 570],
         ],
     },
     "harm_limits": {
@@ -493,6 +536,7 @@ class Params:
                        for it in items},
             "tables": {k: v["rows"] for k, v in self.tables.items()},
             "columns": {k: v["columns"] for k, v in self.tables.items()},
+            "versions": {k: v.get("ver", 1) for k, v in self.tables.items()},
         }, indent=1)
 
     def load_json(self, text):
@@ -503,9 +547,11 @@ class Params:
             except KeyError:
                 pass
         cols = d.get("columns", {})
+        vers = d.get("versions", {})
         for k, rows in d.get("tables", {}).items():
-            # tables saved by an older version (other columns) are ignored
-            if k in self.tables and cols.get(k) == self.tables[k]["columns"]:
+            # tables saved by an older version (other columns or data version) are ignored
+            if k in self.tables and cols.get(k) == self.tables[k]["columns"] \
+                    and vers.get(k, 1) == self.tables[k].get("ver", 1):
                 self.tables[k]["rows"] = rows
 
     def snapshot(self):

@@ -231,6 +231,14 @@ def describe(case):
     return " + ".join(parts) if parts else "grid only"
 
 
+def _probe(case, load, res, p, prof, mode, constraints):
+    r = evaluate(case, load, res, p, prof, mode)
+    r["feasible"] = not ((mode == "iso" and r["unmet_pct"] > constraints.get("max_unmet", 0.1))
+                         or (constraints.get("net_zero") and r["exp"] < r["imp"])
+                         or r["REN"] < constraints.get("min_ren", 0))
+    return r
+
+
 def optimise(name, load, res, p, prof, mode, space, constraints, progress=None, extra=None):
     keys = list(space)
     combos = list(itertools.product(*[space[k] for k in keys]))
@@ -258,13 +266,35 @@ def optimise(name, load, res, p, prof, mode, space, constraints, progress=None, 
     return results
 
 
-def bound_warn(best, space, log, tag):
-    """Like HOMER: warn when the winner sits on the upper edge of the search space."""
+def bound_warn(best, space, log, tag, probe=None):
+    """Like HOMER: the winner sits on the upper edge of the search space, so a
+    larger size might be cheaper. Instead of only warning, try 1.5x and 2x that
+    size (other sizes kept) and say whether the edge really limits the optimum.
+    probe(case) -> evaluated result with 'feasible' and 'NPC'."""
     for k, vals in space.items():
         nums = [v for v in vals if isinstance(v, (int, float))]
-        if len(nums) > 1 and best["case"].get(k) == max(nums) and max(nums) > 0:
-            log.add(tag, f"Search space: '{k}' at upper bound", "optimum may be larger",
-                    best["case"][k], "", status="LOW", note="widen the list in Parameters > Optimisation")
+        if not (len(nums) > 1 and best["case"].get(k) == max(nums) and max(nums) > 0):
+            continue
+        top = max(nums)
+        if probe is None:
+            log.add(tag, f"Search space: '{k}' at upper bound", "optimum may be larger", top, "",
+                    status="LOW", note="widen the list in Parameters > Optimisation")
+            continue
+        tried = []
+        for f in (1.5, 2.0):
+            r = probe(dict(best["case"], **{k: round(top * f, 1)}))
+            tried.append((round(top * f, 1), r))
+        better = [(v, r) for v, r in tried if r["feasible"] and r["NPC"] < best["NPC"]]
+        txt = ", ".join(f"{v:g}: {r['NPC']:,.0f} EUR" for v, r in tried)
+        if better:
+            v, r = min(better, key=lambda x: x[1]["NPC"])
+            log.add(tag, f"Search space: '{k}' at upper bound ({top:g})", "try 1.5x and 2x the largest size",
+                    f"{v:g} is cheaper", "", status="LOW",
+                    note=f"best {best['NPC']:,.0f} EUR vs {txt}: add larger sizes in Parameters > Optimisation")
+        else:
+            log.add(tag, f"Search space: '{k}' at upper bound ({top:g})", "try 1.5x and 2x the largest size",
+                    "larger is not cheaper", "", status="info",
+                    note=f"best {best['NPC']:,.0f} EUR vs {txt}: {top:g} is the real optimum")
 
 
 def table_of(results, mode, top=25):
@@ -333,7 +363,7 @@ def run_village_energy(p, S, prof, log, progress=None):
             None, note="constraints: " + (", ".join(k for k, v in cons.items() if v) or "none"))
     log.add(tag, "Grid only (reference)", "NPC of grid bill", base["NPC"], "EUR",
             note=f"subscription {base['P_sub']:.0f} kW, option {base['tariff']['option']}")
-    bound_warn(best, space, log, tag)
+    bound_warn(best, space, log, tag, probe=lambda c: _probe(c, load, res, p, prof, "village", cons))
     log.add(tag, "Best system", best["label"], best["NPC"], "EUR",
             status="OK" if best["feasible"] else "FAIL",
             note=f"LCOE {best['LCOE']:.4f} EUR/kWh, ren. {best['REN']:.1f} %")
@@ -379,7 +409,8 @@ def run_eco_energy(p, S, prof, log, conn=None, progress=None):
                 note=", ".join(f"{k}: {v}" for k, v in space.items()))
         log.add(tag, "Constraint", "unmet load <= max", p["opt.max_unmet"], "%")
         b = r[0]
-        bound_warn(b, space, log, tag)
+        bound_warn(b, space, log, tag, probe=lambda c: _probe(c, load, res, p, prof, "iso",
+                                                               dict(max_unmet=p["opt.max_unmet"])))
         log.add(tag, "Best isolated system", b["label"], b["NPC"], "EUR",
                 status="OK" if b["feasible"] else "FAIL",
                 note=f"LCOE {b['LCOE']:.3f} EUR/kWh, unmet {b['unmet_pct']:.2f} %, curtailed "
